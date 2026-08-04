@@ -74,14 +74,22 @@ access through a client-readable view or function.
 
 ## Screenshot Storage
 
-Create a private `feedback-screenshots` bucket. Use object paths
-`{organization_id}/{feedback_id}/{uuid}.{ext}`. Only the submitter may upload to
-their new feedback item; submitters and destination-organization members may
-read through short-lived signed URLs. Limit uploads initially to PNG, JPEG, or
-WebP and 5 MB, verify content type server-side, and allow one current screenshot.
-Delete the object when its associated feedback is deleted, using a controlled
-database/storage cleanup operation. Self-service feedback deletion is deferred,
-so ordinary submitters receive no object-delete policy.
+Create a private `feedback-screenshots` bucket. Each item has exactly one
+canonical object path: `{feedback_id}/screenshot`. Insert the feedback row with a
+null `screenshot_path`, upload only to that canonical key, then let the submitter
+associate `screenshot_path` once from null to the same key. Database constraints,
+RLS, and the feedback immutability trigger reject other paths, other users, and
+updates combined with content or status changes. Storage's unique bucket/name
+key prevents additional objects. Object replacement is deferred because a broad
+Storage update policy could also authorize renaming an object; no browser update
+or delete policy is provided in this slice.
+
+Submitters and destination-organization members may read through short-lived
+signed URLs. Limit uploads to PNG, JPEG, or WebP and 5 MB, and verify content type
+in the application as well as through the bucket allowlist. Delete the object
+when its associated feedback is deleted using a controlled database/storage
+cleanup operation. Self-service feedback deletion is deferred, so ordinary
+submitters receive no object-delete policy.
 
 ## Migration and Seed Strategy
 
