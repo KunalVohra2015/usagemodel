@@ -1,10 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Brand } from "@/components/brand";
+import { getSafeNextPath } from "@/features/auth/redirects";
+import {
+  getLoginAvailability,
+  resolveLoginIdentity,
+} from "@/features/auth/login-environment";
+import { getVerifiedIdentity } from "@/features/auth/server";
+import { getSupabaseEnvironmentStatus } from "@/lib/env";
+import { GoogleLoginButton } from "./google-login-button";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  const { next } = await searchParams;
+  const nextPath = getSafeNextPath(next);
+  const availability = getLoginAvailability(getSupabaseEnvironmentStatus());
+  const identity = await resolveLoginIdentity(
+    availability.authenticationAvailable,
+    getVerifiedIdentity,
+  );
+
+  if (identity) redirect(nextPath);
+
   return (
     <main className="grid min-h-screen bg-[#f7faf8] lg:grid-cols-2">
       <section className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-16">
@@ -16,11 +39,18 @@ export default function LoginPage() {
             <p className="mt-3 text-sm leading-6 text-slate-600">Sign in to share feedback and follow what product teams do with it.</p>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-900/5 sm:p-7">
-            <button type="button" className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:bg-slate-50" aria-describedby="prototype-note">
-              <span aria-hidden="true" className="grid size-6 place-items-center rounded-full bg-[conic-gradient(from_-45deg,#4285f4_0_25%,#34a853_0_50%,#fbbc05_0_75%,#ea4335_0)] text-[10px] font-bold text-white">G</span>
-              Continue with Google
-            </button>
-            <p id="prototype-note" className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs leading-5 text-amber-800">Prototype only — Google sign-in is not connected yet.</p>
+            <GoogleLoginButton
+              nextPath={nextPath}
+              authenticationAvailable={availability.authenticationAvailable}
+            />
+            {availability.message && (
+              <p
+                className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-center text-xs leading-5 text-amber-800"
+                role="status"
+              >
+                {availability.message}
+              </p>
+            )}
             <p className="mt-5 text-center text-xs leading-5 text-slate-500">By continuing, you agree to the pilot terms and privacy notice.</p>
           </div>
           <div className="mt-6 flex items-center justify-center gap-4 text-xs">
@@ -37,7 +67,7 @@ export default function LoginPage() {
           <blockquote className="text-3xl font-medium leading-tight tracking-[-0.03em]">“I didn’t just submit an idea. I could see when Acme reviewed it, planned it, and shipped it.”</blockquote>
           <div className="mt-8 flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-white/10 text-xs font-bold">MC</span><div><p className="text-sm font-semibold">Maya Chen</p><p className="text-xs text-slate-400">Pilot customer</p></div></div>
         </div>
-        <p className="relative text-xs text-slate-500">Secure authentication will be added in the implementation phase.</p>
+        <p className="relative text-xs text-slate-500">Secure sign-in powered by Google and Supabase.</p>
       </section>
     </main>
   );

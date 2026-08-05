@@ -3,23 +3,54 @@ type SupabaseEnvironment = {
   publishableKey: string;
 };
 
-function readSupabaseEnvironment(): Partial<SupabaseEnvironment> {
+type EnvironmentSource = {
+  [key: string]: string | undefined;
+  NEXT_PUBLIC_SUPABASE_URL?: string;
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
+};
+
+export type SupabaseEnvironmentStatus =
+  | "configured"
+  | "missing"
+  | "incomplete";
+
+function readSupabaseEnvironment(
+  source: EnvironmentSource = process.env,
+): Partial<SupabaseEnvironment> {
   return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    publishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    url: source.NEXT_PUBLIC_SUPABASE_URL,
+    publishableKey: source.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   };
 }
 
-export function hasSupabaseEnvironment() {
-  const environment = readSupabaseEnvironment();
+export function getSupabaseEnvironmentStatus(
+  source: EnvironmentSource = process.env,
+): SupabaseEnvironmentStatus {
+  const environment = readSupabaseEnvironment(source);
+  const hasUrl = Boolean(environment.url);
+  const hasKey = Boolean(environment.publishableKey);
 
-  if (Boolean(environment.url) !== Boolean(environment.publishableKey)) {
+  if (hasUrl && hasKey) return "configured";
+  if (!hasUrl && !hasKey) return "missing";
+  return "incomplete";
+}
+
+export function isSupabaseEnvironmentAvailable(
+  source: EnvironmentSource = process.env,
+) {
+  return getSupabaseEnvironmentStatus(source) === "configured";
+}
+
+export function hasSupabaseEnvironment() {
+  const status = getSupabaseEnvironmentStatus();
+
+  if (status === "incomplete") {
     throw new Error(
       "Supabase environment configuration is incomplete; set both public variables.",
     );
   }
 
-  return Boolean(environment.url && environment.publishableKey);
+  return status === "configured";
 }
 
 export function getSupabaseEnvironment(): SupabaseEnvironment {

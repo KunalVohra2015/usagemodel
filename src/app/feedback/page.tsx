@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FeedbackCard } from "@/components/feedback-card";
-import { UserShell } from "@/components/user-shell";
 import { currentUserFeedback } from "@/features/feedback/mock-data";
 
 export const metadata: Metadata = { title: "My feedback" };
 
 export default function FeedbackPage() {
   return (
-    <UserShell>
-      <main className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+    <main className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-teal-700">Your feedback loop</p>
@@ -32,7 +30,6 @@ export default function FeedbackPage() {
         <aside className="mt-10 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
           <strong className="font-semibold">Prototype note:</strong> These are realistic sample records. Local changes reset when you leave a page.
         </aside>
-      </main>
-    </UserShell>
+    </main>
   );
 }

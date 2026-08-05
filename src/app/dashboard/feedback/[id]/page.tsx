@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DashboardShell } from "@/components/dashboard-shell";
 import { getFeedbackById } from "@/features/feedback/mock-data";
 import { typeLabels } from "@/features/feedback/types";
 import { FeedbackControls } from "./feedback-controls";
@@ -14,7 +13,7 @@ export default async function DashboardFeedbackPage({ params }: { params: Promis
   if (!item) notFound();
 
   return (
-    <DashboardShell>
+    <>
       <div className="border-b border-slate-200 bg-white px-4 py-4 sm:px-7 lg:px-10"><div className="mx-auto max-w-7xl"><Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-700" href="/dashboard"><span aria-hidden="true">←</span> Feedback inbox</Link></div></div>
       <main className="mx-auto grid max-w-7xl items-start gap-6 p-4 sm:p-7 xl:grid-cols-[minmax(0,1fr)_22rem] lg:p-10">
         <div className="space-y-6">
@@ -44,6 +43,6 @@ export default async function DashboardFeedbackPage({ params }: { params: Promis
         </div>
         <aside className="xl:sticky xl:top-6"><FeedbackControls initialStatus={item.status} initialResponse={item.officialResponse?.body} /></aside>
       </main>
-    </DashboardShell>
+    </>
   );
 }

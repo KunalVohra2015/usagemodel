@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/status-badge";
-import { UserShell } from "@/components/user-shell";
 import { getFeedbackById } from "@/features/feedback/mock-data";
 import { statusLabels, typeLabels } from "@/features/feedback/types";
 
@@ -14,8 +13,7 @@ export default async function FeedbackDetailPage({ params }: { params: Promise<{
   if (!item) notFound();
 
   return (
-    <UserShell>
-      <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
         <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-teal-700" href="/feedback"><span aria-hidden="true">←</span> Back to my feedback</Link>
         <div className="mt-7 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="space-y-6">
@@ -52,7 +50,6 @@ export default async function FeedbackDetailPage({ params }: { params: Promise<{
             </section>
           </aside>
         </div>
-      </main>
-    </UserShell>
+    </main>
   );
 }
