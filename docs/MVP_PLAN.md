@@ -32,12 +32,24 @@ the Chrome extension until the web workflow and versioned API are stable.
 - **Verify:** unauthenticated redirects, session refresh, and signed-in shell.
 - **Manual gate:** Supabase project and Google OAuth credentials/redirect URLs.
 
-### 3. Web feedback submission
+### 3a. User-expandable company directory
 
-- Add feedback schema and RLS, active-organization picker, validated submission
-  form, and `POST /api/v1/feedback` using shared domain logic.
+- Add a searchable company directory, canonical domain normalization,
+  authenticated unclaimed-company creation with duplicate reuse, public company
+  pages, and active-organization picker. Keep feedback submission explicitly
+  local-only until slice 3b.
+- **Verify:** directory tests prove unauthenticated creation fails, same-domain
+  concurrency reuses one row, slug collisions are safe, and creating a company
+  grants no membership.
+
+### 3b. Real web feedback submission
+
+- Connect the validated form to the existing feedback table and private
+  screenshot workflow using the selected organization ID and authenticated user.
+  Add `POST /api/v1/feedback` through shared domain logic.
 - **Verify:** a user submits required context; invalid and cross-tenant payloads
-  fail; the item begins as `submitted`.
+  fail; the persisted item begins as `submitted`. Remove the prototype-only
+  submission notice only after this behavior passes RLS tests.
 
 ### 4. Submitter feedback loop
 
@@ -86,6 +98,9 @@ the Chrome extension until the web workflow and versioned API are stable.
 - Add end-to-end coverage for both roles and organizations, accessible states,
   request/error logging, rate limits on mutations, privacy copy, retention
   behavior, staging deployment, and a recovery runbook.
+- Add directory moderation tools and deployment-level per-user/per-IP rate
+  limits; define duplicate merge, incorrect-name, malicious-record, domain
+  dispute, claim, and verification procedures.
 - **Verify:** full acceptance-criteria walkthrough against staging and policy
   tests in CI.
 

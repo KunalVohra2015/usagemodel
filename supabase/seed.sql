@@ -7,16 +7,30 @@
 --
 -- Never commit real user emails or Auth UUIDs to this file.
 
-insert into public.organizations (id, name, slug, is_active)
+insert into public.organizations (
+  id,
+  name,
+  slug,
+  website_url,
+  normalized_domain,
+  claim_status,
+  is_active
+)
 values (
   '00000000-0000-4000-8000-000000000001',
   'Acme Software',
   'acme-software',
+  'https://acme-software.example',
+  'acme-software.example',
+  'claimed',
   true
 )
 on conflict (id) do update set
   name = excluded.name,
   slug = excluded.slug,
+  website_url = excluded.website_url,
+  normalized_domain = excluded.normalized_domain,
+  claim_status = excluded.claim_status,
   is_active = excluded.is_active;
 
 do $$

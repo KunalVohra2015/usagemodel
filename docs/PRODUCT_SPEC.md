@@ -22,11 +22,13 @@ multi-organization from the beginning.
 
 ## User Journeys
 
-1. A user signs in with Google, completes a minimal profile, selects a listed
-   destination company, and submits feedback.
-2. The submission records type (`bug`, `feature_request`, `usability`, or
-   `other`), title, description, source URL, page title, optional selected text,
-   and optional screenshot.
+1. A user signs in with Google, completes a minimal profile, searches the public
+   company directory, and submits feedback. If the company is missing, the user
+   adds its name and website; this creates an unclaimed directory entry without
+   granting membership or administrative authority.
+2. The submission records type (`bug`, `feature_request`,
+   `confusing_experience`, or `other`), title, description, source URL, page
+   title, optional selected text, and optional screenshot.
 3. The user sees the submission as `submitted` and can later view its current
    status and official company response.
 4. A destination-company member sees routed submissions in a private dashboard
@@ -41,6 +43,8 @@ multi-organization from the beginning.
 - Google OAuth through Supabase and protected web routes.
 - Multi-organization membership with `member` and `admin` roles.
 - Organization discovery for choosing a feedback destination.
+- User-expanded company directory with canonical websites, domain-based
+  duplicate reuse, stable `/companies/[slug]` pages, and unclaimed status.
 - Web feedback creation, optional private screenshot upload, and validation.
 - Submitter history and feedback detail views.
 - Organization inbox and detail views.
@@ -55,11 +59,12 @@ multi-organization from the beginning.
 
 ## Out of Scope
 
-Multiple identities per user; public feeds; voting; comments; rewards; AI
+Multiple identities per user; public feedback feeds; voting; comments; rewards; AI
 categorization; duplicate detection; Productboard, Airtable, Jira, or Linear
 integrations; SMS; billing; and native mobile apps are excluded. Email
-notifications, custom statuses, anonymous submissions, and organization
-self-service creation are also deferred unless pilot evidence requires them.
+notifications, custom statuses, anonymous submissions, company claiming,
+automatic domain verification, and self-service organization administration are
+also deferred unless pilot evidence requires them.
 Email invitations and self-service feedback deletion are deferred. The Chrome
 extension is deferred until the complete web feedback loop works.
 
@@ -69,6 +74,14 @@ extension is deferred until the complete web feedback loop works.
 - A Google-authenticated user can submit all required fields to an active
   organization and can read only feedback they submitted, unless they are an
   authorized member of its destination organization.
+- Users can search active companies by name or normalized domain and add a
+  missing company only with a valid public website. `www` aliases reuse the same
+  unique domain; meaningful subdomains remain distinct.
+- Every user-created company is `unclaimed`, records its creator, receives a
+  unique slug, and creates no membership. Concurrent requests for the same
+  normalized domain return one organization.
+- Public company pages expose directory metadata and a safe feedback link only;
+  they expose no feedback, people, responses, screenshots, or admin controls.
 - Optional selected text and screenshot omission do not block submission.
 - Screenshots are never public; authorized viewers receive expiring URLs.
 - Screenshot uploads accept PNG, JPEG, and WebP files up to 5 MB and remain
@@ -88,13 +101,16 @@ extension is deferred until the complete web feedback loop works.
 ## Assumptions to Validate
 
 - Submitters will sign in before providing feedback rather than abandon intake.
-- A curated organization list is sufficient for the pilot.
+- Users can identify the correct company from name/domain search and understand
+  that adding a directory entry is not the same as verified company ownership.
 - Six shared statuses describe pilot teams' workflows.
 - A single official response is more useful than a conversation thread.
 - Users are comfortable sharing source URLs, selected text, and screenshots.
 - Product teams will regularly update status without notification automation.
 - Google-only authentication covers pilot participants.
 - Manual organization membership assignment is sufficient for the pilot.
+- Preserving meaningful subdomains avoids merging distinct web applications;
+  moderation can merge mistakes later.
 - The pilot's privacy needs are met by hosted Supabase in the US region closest
   to users in New York and private object storage; legal requirements still
   need confirmation before real customer data is collected.

@@ -166,11 +166,19 @@ values
   ('00000000-0000-4000-8000-000000000103'),
   ('00000000-0000-4000-8000-000000000104');
 
-insert into public.organizations (id, name, slug)
+insert into public.organizations (
+  id,
+  name,
+  slug,
+  website_url,
+  normalized_domain
+)
 values (
   '00000000-0000-4000-8000-000000000201',
   'Foundation Audit Organization',
-  'foundation-audit-organization'
+  'foundation-audit-organization',
+  'https://foundation-audit.example.com',
+  'foundation-audit.example.com'
 );
 
 insert into public.organization_members (organization_id, user_id, role)

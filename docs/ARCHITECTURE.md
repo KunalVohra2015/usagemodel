@@ -2,13 +2,13 @@
 
 ## Current Repository
 
-The repository is a clean `create-next-app` baseline with one Git commit and no
-uncommitted application work at inspection time. It contains Next.js 16.3.0,
-React 19.2.8, strict TypeScript 5, App Router, Tailwind CSS 4 through PostCSS,
-ESLint 9 with Next.js rules, npm lockfile, a starter page, root layout, global
-styles, and public starter assets. `next.config.ts` is empty. There are no API
-routes, Supabase packages or configuration, environment files, tests, CI,
-deployment config, database schema, authentication, or extension workspace.
+The repository uses Next.js 16.3, React 19, strict TypeScript, App Router,
+Tailwind CSS 4, and Supabase SSR. It includes the approved responsive prototype,
+Google PKCE authentication, mock-mode fallbacks, an applied RLS foundation
+migration, SQL audits, and Node tests. Feedback pages still use mock feedback;
+the company directory is the first real data-backed end-user slice. On
+`/feedback/new`, directory search and authenticated company creation may be real,
+but the feedback submit handler remains local-only and writes no feedback row.
 
 ## Recommended Shape
 
@@ -57,13 +57,34 @@ service-role client for normal product requests.
 
 Initial endpoints:
 
-- `GET /api/v1/organizations`
+- `GET /api/v1/companies?domain=...` returns public directory metadata for a
+  normalized website lookup; this is the future extension preselection seam.
+- Authenticated company creation uses the narrowly granted
+  `find_or_create_unclaimed_organization` RPC after server-side URL parsing.
 - `POST /api/v1/feedback`
 - `GET /api/v1/feedback` and `GET /api/v1/feedback/:id`
 - `POST /api/v1/feedback/:id/screenshot`
 - `PATCH /api/v1/feedback/:id/status`
 - `PUT /api/v1/feedback/:id/response`
 - `GET/POST/DELETE /api/v1/organizations/:id/members`
+
+The application normalizer uses the platform URL parser, converts internationalized
+hostnames consistently to IDNA ASCII, removes only a leading `www`, and preserves
+meaningful subdomains. It strips paths, queries, fragments, and default ports;
+custom ports, credentials, localhost, reserved development suffixes, and raw IP
+addresses are rejected, and canonical storage always uses HTTPS. This layer
+provides user-friendly errors; the privileged RPC independently repeats the host
+checks and is authoritative for direct authenticated calls. It derives the
+normalized domain from the canonical URL without unsafe network-address casts.
+The database unique domain index and transaction advisory lock make duplicate
+reuse concurrency-safe. RPC inputs cannot include creator, claim status, or
+membership.
+
+Public company pages query a dedicated safe-field RPC rather than granting anon
+table access. Company creation uses the caller's JWT and never a service-role
+key. A deployment-level rate limit is still required for the creation action
+(for example, per-user and per-IP limits at Vercel); `created_by` supports
+moderation and abuse investigation.
 
 The screenshot endpoint accepts one size- and MIME-limited upload after the
 feedback row exists. Store only its object path in PostgreSQL. A server endpoint
@@ -92,6 +113,8 @@ tokens, email addresses, or signed URLs.
 - The eventual production domain and exact Vercel/Supabase project ownership.
 - Extension authentication UX and Chrome Web Store distribution, deferred until
   the web feedback loop works.
+- Directory moderation policy and tooling for duplicate merges, incorrect names,
+  domain disputes, malicious records, and the later claim/verification workflow.
 
 ## Manual Setup Needed
 

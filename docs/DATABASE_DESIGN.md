@@ -13,7 +13,8 @@ service-role key.
 ### Enums
 
 - `organization_role`: `member`, `admin`
-- `feedback_type`: `bug`, `feature_request`, `usability`, `other`
+- `organization_claim_status`: `unclaimed`, `claimed`, `verified`
+- `feedback_type`: `bug`, `feature_request`, `confusing_experience`, `other`
 - `feedback_status`: `submitted`, `under_review`, `planned`, `in_progress`,
   `shipped`, `declined`
 
@@ -22,7 +23,7 @@ service-role key.
 | Table | Key fields and constraints |
 | --- | --- |
 | `profiles` | `id` references `auth.users` with cascade delete; `display_name`, optional `avatar_url`, timestamps |
-| `organizations` | `id`, unique case-insensitive `name`, unique lowercase `slug`, `is_active`, timestamps |
+| `organizations` | `id`, `name`, unique lowercase `slug`, canonical `website_url`, unique `normalized_domain`, `claim_status`, nullable `created_by`, `is_active`, timestamps |
 | `organization_members` | `organization_id`, `user_id`, `role`, `created_by`, timestamps; composite primary key on organization/user |
 | `feedback` | `id`, `organization_id`, `submitter_id`, `type`, `title`, `description`, `source_url`, `page_title`, nullable `selected_text`, nullable `screenshot_path`, `status` default `submitted`, timestamps |
 | `feedback_status_history` | `id`, `feedback_id`, `organization_id`, nullable `from_status`, `to_status`, `changed_by`, `created_at` |
@@ -40,12 +41,24 @@ An organization has many members and feedback items. A user can belong to many
 organizations and submit to any active organization. Feedback has many status
 events and zero or one official response.
 
+Directory identity is domain-based, not name-based: names need not be unique.
+`www.example.com` normalizes to `example.com`; meaningful subdomains such as
+`app.example.com` remain separate. Canonical website URLs contain only HTTPS and
+the normalized IDNA hostname. Application validation provides user-friendly
+errors, while the privileged creation RPC independently rejects raw IPs, local
+and reserved development hosts, credentials, ports, paths, malformed labels,
+and conflicting representations. Database validation is authoritative for
+direct authenticated calls. It also rejects markup-like names, duplicate
+normalized domains, and protected claim-state input.
+
 Add indexes for:
 
 - `feedback (submitter_id, created_at desc)`
 - `feedback (organization_id, created_at desc)`
 - `feedback (organization_id, status, created_at desc)`
 - `organization_members (user_id, organization_id)`
+- unique `organizations (normalized_domain)` plus lookup indexes on lowercase
+  name and non-null `created_by`
 - `feedback_status_history (feedback_id, created_at)`
 
 ## Row Level Security
@@ -57,7 +70,7 @@ a non-login role and executable only by authenticated users.
 | Resource | Read | Create/change |
 | --- | --- | --- |
 | Profiles | own profile; organization members may read a submitter's display name for feedback routed to their organization | own display fields only |
-| Organizations | authenticated users can list active destinations; members can read their inactive organization | seeded or controlled admin operation only |
+| Organizations | authenticated users list active destinations; safe-field RPCs support public slug/domain lookup | authenticated creation RPC accepts only name and canonical website, binds `created_by` to `auth.uid()`, and always inserts `unclaimed`; no direct browser insert/update |
 | Memberships | members read their organization's roster | organization admins manually add/remove existing authenticated users and change roles; prevent removing/demoting the last admin |
 | Feedback | submitter or destination-organization member | authenticated user inserts as self to active organization; only org admins change status; no submitter edits in MVP |
 | Status history | same visibility as parent feedback | trigger only; clients cannot update/delete |
@@ -71,6 +84,13 @@ Supabase Auth remains the source for email addresses. Do not copy email into the
 public profile. Return it only through an administrator-authorized server
 operation; members receive `display_name` only. Do not expose broad Auth-table
 access through a client-readable view or function.
+
+The directory creation function is `SECURITY DEFINER` with an empty
+`search_path`, schema-qualified objects, public/anon execution revoked, and an
+explicit authenticated grant. A transaction-scoped advisory lock keyed by
+normalized domain plus the unique index makes duplicate creation safe. It never
+inserts `organization_members`; directory contribution and verified ownership
+are separate. Existing claimed organizations are not user-editable.
 
 ## Screenshot Storage
 
@@ -100,3 +120,7 @@ tests should create a second fixture-only organization and role-separated users
 so cross-tenant denials remain repeatable without presenting a second pilot
 organization in the product. Generated TypeScript database types should be
 committed after each schema change.
+
+Future moderation must cover duplicate merges, incorrect names, misleading
+records, domain ownership disputes, claims, and verification. The MVP records
+`created_by` but does not implement these workflows or automatic verification.
