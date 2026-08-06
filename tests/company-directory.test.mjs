@@ -6,12 +6,20 @@ import {
   WebsiteNormalizationError,
 } from "../src/features/organizations/domain-normalization.ts";
 import {
+  getSelectorKeyAction,
+  suggestedCompanyFromQuery,
+} from "../src/features/organizations/company-selector-model.ts";
+import {
   createOrReuseDirectoryCompany,
   getCompanyBySlug,
   searchDirectoryCompanies,
   selectCompanyBySlug,
 } from "../src/features/organizations/directory.ts";
 import { mockCompanies } from "../src/features/organizations/mock-data.ts";
+import {
+  validateFeedbackForm,
+  visibleFeedbackError,
+} from "../src/features/feedback/form-validation.ts";
 
 test("normalizes company websites with standards-based URL parsing", () => {
   const cases = [
@@ -110,6 +118,66 @@ test("searches existing companies by name and normalized domain", () => {
   assert.deepEqual(searchDirectoryCompanies(mockCompanies, ""), mockCompanies);
 });
 
+test("no-result domain searches produce an editable add-company suggestion", () => {
+  assert.deepEqual(suggestedCompanyFromQuery("potatoes.com"), {
+    label: "potatoes.com",
+    website: "potatoes.com",
+    name: "Potatoes",
+  });
+  assert.deepEqual(suggestedCompanyFromQuery("https://www.green-potatoes.com/products"), {
+    label: "green-potatoes.com",
+    website: "green-potatoes.com",
+    name: "Green Potatoes",
+  });
+});
+
+test("selector keyboard navigation reaches results and the add action", () => {
+  assert.deepEqual(getSelectorKeyAction({
+    key: "ArrowDown", activeIndex: -1, resultCount: 2, hasAddAction: true,
+  }), { type: "none", activeIndex: 0 });
+  assert.deepEqual(getSelectorKeyAction({
+    key: "ArrowDown", activeIndex: 1, resultCount: 2, hasAddAction: true,
+  }), { type: "none", activeIndex: 2 });
+  assert.deepEqual(getSelectorKeyAction({
+    key: "Enter", activeIndex: 0, resultCount: 2, hasAddAction: true,
+  }), { type: "select", resultIndex: 0, activeIndex: -1 });
+  assert.deepEqual(getSelectorKeyAction({
+    key: "Enter", activeIndex: 0, resultCount: 0, hasAddAction: true,
+  }), { type: "add", activeIndex: -1 });
+  assert.deepEqual(getSelectorKeyAction({
+    key: "Escape", activeIndex: 1, resultCount: 2, hasAddAction: true,
+  }), { type: "close", activeIndex: -1 });
+});
+
+test("feedback validation waits for blur or submit and clears after correction", () => {
+  assert.equal(visibleFeedbackError({
+    field: "title", value: "", touched: false, submitAttempted: false,
+  }), undefined);
+  assert.equal(visibleFeedbackError({
+    field: "description", value: "", touched: false, submitAttempted: false,
+  }), undefined);
+  assert.equal(visibleFeedbackError({
+    field: "title", value: "", touched: true, submitAttempted: false,
+  }), "Add a short, specific title.");
+  assert.equal(visibleFeedbackError({
+    field: "title", value: "Clear export labels", touched: true, submitAttempted: false,
+  }), undefined);
+
+  assert.deepEqual(validateFeedbackForm({
+    organization: "",
+    title: "",
+    description: "",
+    sourceUrl: "invalid",
+    pageTitle: "",
+  }), {
+    organization: "Select an existing company or add this company.",
+    title: "Add a short, specific title.",
+    description: "Tell the product team what happened or what would help.",
+    sourceUrl: "Enter a complete URL beginning with http:// or https://.",
+    pageTitle: "Add the title of the source page.",
+  });
+});
+
 test("preselection accepts only a known safe slug", () => {
   assert.equal(selectCompanyBySlug(mockCompanies, "salesforce"), mockCompanies[1]);
   assert.equal(selectCompanyBySlug(mockCompanies, "//attacker.example"), undefined);
@@ -152,7 +220,7 @@ test("public company route contains no private feedback or membership query", as
   assert.match(page, /feedback\/new\?company=/);
 });
 
-test("feedback submission remains explicit local-only prototype behavior", async () => {
+test("feedback submission keeps an explicit demo path beside configured persistence", async () => {
   const form = await readFile(
     new URL("../src/app/feedback/new/feedback-form.tsx", import.meta.url),
     "utf8",
@@ -162,8 +230,31 @@ test("feedback submission remains explicit local-only prototype behavior", async
     "utf8",
   );
 
-  assert.match(form, /feedback entered below is not saved yet/i);
-  assert.match(form, /prototype feedback was <strong>not saved<\/strong>/i);
+  assert.match(form, /feedback entered below is not saved/i);
+  assert.match(form, /demoMode/);
   assert.doesNotMatch(form, /\.from\(["']feedback["']\)|\.rpc\(["'][^"']*feedback/i);
-  assert.doesNotMatch(action, /\.from\(["']feedback["']\)|\.rpc\(["'][^"']*feedback/i);
+  assert.match(action, /\.from\("feedback"\)/);
+  assert.match(action, /getVerifiedIdentity/);
+});
+
+test("selector keeps no-results actions in its popover and closes accessibly", async () => {
+  const selector = await readFile(
+    new URL("../src/app/feedback/new/company-selector.tsx", import.meta.url),
+    "utf8",
+  );
+  const action = await readFile(
+    new URL("../src/app/feedback/new/actions.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(selector, /No company found for/);
+  assert.match(selector, /<span>Add \{suggestion\.label\}<\/span>/);
+  assert.match(selector, /role="combobox"/);
+  assert.match(selector, /role="listbox"/);
+  assert.match(selector, /aria-activedescendant/);
+  assert.match(selector, /document\.addEventListener\("pointerdown"/);
+  assert.match(selector, /action\.type === "close"/);
+  assert.doesNotMatch(selector, /Can’t find the company\? Add it/);
+  assert.match(action, /getSupabaseEnvironmentStatus\(\) !== "configured"/);
+  assert.match(action, /\.rpc\("find_or_create_unclaimed_organization"/);
 });

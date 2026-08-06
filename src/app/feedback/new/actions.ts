@@ -1,6 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { getVerifiedIdentity } from "@/features/auth/server";
+import {
+  persistFeedbackSubmission,
+  type FeedbackSubmissionInput,
+  type FeedbackSubmissionResult,
+} from "@/features/feedback/submission";
 import {
   normalizeCompanyWebsite,
   WebsiteNormalizationError,
@@ -90,4 +96,69 @@ export async function createOrReuseCompany(
         : "We could not add that company. Please try again.",
     };
   }
+}
+
+export async function submitFeedback(
+  input: FeedbackSubmissionInput,
+): Promise<FeedbackSubmissionResult> {
+  if (getSupabaseEnvironmentStatus() !== "configured") {
+    return {
+      ok: false,
+      errors: { form: "Feedback is not persisted in demo mode." },
+    };
+  }
+
+  const identity = await getVerifiedIdentity();
+  if (!identity) {
+    return {
+      ok: false,
+      errors: { form: "Sign in before submitting feedback." },
+    };
+  }
+  const supabase = await createClient();
+  const result = await persistFeedbackSubmission({
+    identityId: identity.id,
+    input,
+    store: {
+      async organizationIsActive(organizationId) {
+        const { data, error } = await supabase
+          .from("organizations")
+          .select("id")
+          .eq("id", organizationId)
+          .eq("is_active", true)
+          .maybeSingle();
+        return !error && Boolean(data);
+      },
+      async insert(feedback) {
+        const { data, error } = await supabase
+          .from("feedback")
+          .insert({
+            submitter_id: feedback.submitterId,
+            organization_id: feedback.organizationId,
+            type: feedback.type,
+            title: feedback.title,
+            description: feedback.description,
+            source_url: feedback.sourceUrl,
+            page_title: feedback.pageTitle,
+            selected_text: feedback.selectedText,
+          })
+          .select("id")
+          .single();
+        return { id: data?.id ?? null, error: Boolean(error) };
+      },
+    },
+  });
+
+  if (!result.ok) {
+    if (result.errors.form === "We could not save your feedback. Please try again.") {
+      console.error("Feedback submission failed", {
+        operation: "insert_feedback",
+      });
+    }
+    return result;
+  }
+
+  revalidatePath("/feedback");
+  revalidatePath(`/feedback/${result.feedbackId}`);
+  return result;
 }

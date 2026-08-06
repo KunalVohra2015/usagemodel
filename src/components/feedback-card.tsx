@@ -1,9 +1,9 @@
 import Link from "next/link";
-import type { FeedbackItem } from "@/features/feedback/types";
+import type { UserFeedbackSummary } from "@/features/feedback/server";
 import { typeLabels } from "@/features/feedback/types";
 import { StatusBadge } from "./status-badge";
 
-export function FeedbackCard({ item }: { item: FeedbackItem }) {
+export function FeedbackCard({ item }: { item: UserFeedbackSummary }) {
   return (
     <Link
       href={`/feedback/${item.id}`}
@@ -19,6 +19,7 @@ export function FeedbackCard({ item }: { item: FeedbackItem }) {
           </div>
           <h2 className="text-base font-semibold tracking-tight text-slate-950 group-hover:text-teal-700 sm:text-lg">{item.title}</h2>
           <p className="mt-1.5 line-clamp-2 text-sm leading-6 text-slate-600">{item.description}</p>
+          {item.officialResponse && <p className="mt-3 line-clamp-2 rounded-lg bg-teal-50 px-3 py-2 text-xs leading-5 text-teal-800"><strong>Latest response:</strong> {item.officialResponse.body}</p>}
         </div>
         <StatusBadge status={item.status} />
       </div>

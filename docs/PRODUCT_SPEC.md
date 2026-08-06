@@ -83,6 +83,8 @@ extension is deferred until the complete web feedback loop works.
 - Public company pages expose directory metadata and a safe feedback link only;
   they expose no feedback, people, responses, screenshots, or admin controls.
 - Optional selected text and screenshot omission do not block submission.
+- Text feedback must be persisted before success is shown. Screenshot upload is
+  a follow-up slice; configured-mode intake must not imply an image was saved.
 - Screenshots are never public; authorized viewers receive expiring URLs.
 - Screenshot uploads accept PNG, JPEG, and WebP files up to 5 MB and remain
   stored until their associated feedback is deleted.

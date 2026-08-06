@@ -5,10 +5,10 @@
 The repository uses Next.js 16.3, React 19, strict TypeScript, App Router,
 Tailwind CSS 4, and Supabase SSR. It includes the approved responsive prototype,
 Google PKCE authentication, mock-mode fallbacks, an applied RLS foundation
-migration, SQL audits, and Node tests. Feedback pages still use mock feedback;
-the company directory is the first real data-backed end-user slice. On
-`/feedback/new`, directory search and authenticated company creation may be real,
-but the feedback submit handler remains local-only and writes no feedback row.
+migration, SQL audits, and Node tests. With Supabase configured, `/feedback/new`
+persists authenticated text feedback and `/feedback` plus `/feedback/[id]` read
+only the verified submitter's records. Without Supabase, those routes retain a
+clearly labeled and isolated demo experience.
 
 ## Recommended Shape
 
@@ -86,7 +86,7 @@ key. A deployment-level rate limit is still required for the creation action
 (for example, per-user and per-IP limits at Vercel); `created_by` supports
 moderation and abuse investigation.
 
-The screenshot endpoint accepts one size- and MIME-limited upload after the
+Screenshot upload remains the next vertical slice. The future screenshot endpoint accepts one size- and MIME-limited upload after the
 feedback row exists. Store only its object path in PostgreSQL. A server endpoint
 authorizes the viewer before issuing a short-lived signed URL. Accept PNG, JPEG,
 and WebP files up to 5 MB and retain them until the parent feedback is deleted.

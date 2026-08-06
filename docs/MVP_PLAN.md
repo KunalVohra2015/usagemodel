@@ -44,16 +44,18 @@ the Chrome extension until the web workflow and versioned API are stable.
 
 ### 3b. Real web feedback submission
 
-- Connect the validated form to the existing feedback table and private
-  screenshot workflow using the selected organization ID and authenticated user.
-  Add `POST /api/v1/feedback` through shared domain logic.
+- **Implemented for text feedback:** connect the validated form to the existing
+  feedback table using the selected active organization, verified authenticated
+  identity, and RLS. Redirect to the persisted detail and refresh My Feedback.
+  Private screenshot upload remains a separate follow-up slice.
 - **Verify:** a user submits required context; invalid and cross-tenant payloads
   fail; the persisted item begins as `submitted`. Remove the prototype-only
   submission notice only after this behavior passes RLS tests.
 
 ### 4. Submitter feedback loop
 
-- Add submitter list and detail pages through shared queries.
+- **Implemented:** add owner-scoped persisted list and detail queries, newest-first
+  ordering, status history, official responses, and controlled failure states.
 - **Verify:** users see status and empty-response state for their own items but
   cannot open another user's item.
 
