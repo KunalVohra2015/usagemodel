@@ -61,24 +61,26 @@ the Chrome extension until the web workflow and versioned API are stable.
 
 ### 5. Organization inbox
 
-- Add member inbox, status filtering, and feedback detail including submitter
-  display name. Add an admin-only server operation for submitter email.
+- **Implemented:** add a real membership-scoped inbox, organization selection,
+  status/type/search filtering, and feedback detail with submitter display name.
+  Submitter email remains unqueried and unexposed.
 - **Verify:** members see only their organizations; non-members are denied by UI,
   API, and RLS; members cannot retrieve email while administrators can.
 
 ### 6. Administrative status workflow
 
-- Add status history trigger, admin status control, and
-  `PATCH /api/v1/feedback/:id/status`.
+- **Implemented in the web slice:** use the existing history trigger and add an
+  authenticated, server-authorized admin status control. A versioned extension
+  endpoint remains future work.
 - **Verify:** admin changes are audited and visible to the submitter; members
   cannot mutate status; every direct transition between different valid statuses
   succeeds for an administrator.
 
 ### 7. Official response
 
-- Add one updatable response and `PUT /api/v1/feedback/:id/response`.
-- **Verify:** administrators publish/edit; submitters see the current response;
-  member and cross-tenant writes fail.
+- **Implemented for publication:** organization members may publish the one
+  official response under existing RLS, and submitters see it immediately.
+  Editing/deletion and a versioned extension endpoint remain deferred.
 
 ### 8. Private screenshot
 

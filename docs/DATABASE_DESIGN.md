@@ -24,10 +24,10 @@ service-role key.
 | --- | --- |
 | `profiles` | `id` references `auth.users` with cascade delete; `display_name`, optional `avatar_url`, timestamps |
 | `organizations` | `id`, `name`, unique lowercase `slug`, canonical `website_url`, unique `normalized_domain`, `claim_status`, nullable `created_by`, `is_active`, timestamps |
-| `organization_members` | `organization_id`, `user_id`, `role`, `created_by`, timestamps; composite primary key on organization/user |
+| `organization_members` | `organization_id`, `user_id`, `role`, `created_at`; composite primary key on organization/user |
 | `feedback` | `id`, `organization_id`, `submitter_id`, `type`, `title`, `description`, `source_url`, `page_title`, nullable `selected_text`, nullable `screenshot_path`, `status` default `submitted`, timestamps |
-| `feedback_status_history` | `id`, `feedback_id`, `organization_id`, nullable `from_status`, `to_status`, `changed_by`, `created_at` |
-| `feedback_responses` | `feedback_id` primary key, `organization_id`, `body`, `created_by`, timestamps; one official response per item |
+| `feedback_status_history` | `id`, `feedback_id`, nullable `previous_status`, `new_status`, `changed_by`, `created_at` |
+| `feedback_responses` | `id`, unique `feedback_id`, `organization_id`, `body`, `author_id`, timestamps; one official response per item |
 
 `source_url` must be HTTP(S). Apply practical length checks to titles, page
 titles, response bodies, URLs, descriptions, and selected text. Use triggers for
@@ -74,7 +74,7 @@ a non-login role and executable only by authenticated users.
 | Memberships | members read their organization's roster | organization admins manually add/remove existing authenticated users and change roles; prevent removing/demoting the last admin |
 | Feedback | submitter or destination-organization member | authenticated user inserts as self to active organization; only org admins change status; no submitter edits in MVP |
 | Status history | same visibility as parent feedback | trigger only; clients cannot update/delete |
-| Official response | same visibility as parent feedback | destination-organization admins insert/update; no client delete initially |
+| Official response | same visibility as parent feedback | destination-organization members may publish the single response; existing author or admin update is allowed by RLS, but editing/deletion UI is deferred |
 
 Never accept `submitter_id`, status actor, or response author as trusted client
 claims; derive them from `auth.uid()`. Test every policy using at least two
@@ -91,6 +91,11 @@ explicit authenticated grant. A transaction-scoped advisory lock keyed by
 normalized domain plus the unique index makes duplicate creation safe. It never
 inserts `organization_members`; directory contribution and verified ownership
 are separate. Existing claimed organizations are not user-editable.
+
+The pilot administrator bootstrap is a manual, transactional SQL Editor
+template. It requires exactly one organization match and one Auth-user match,
+promotes only `unclaimed` to `claimed`, preserves `verified`, and idempotently
+upserts an explicit admin membership. It is never exposed through the app.
 
 ## Screenshot Storage
 

@@ -11,7 +11,8 @@ organization responsible for a software product.
 ## Target Users
 
 - **End user:** submits feedback and tracks only their own submissions.
-- **Organization member:** reviews feedback routed to their organization.
+- **Organization member:** reviews routed feedback and may publish the single
+  official response.
 - **Organization administrator:** manages members, changes status, and publishes
   an official response. Administrators also have all member capabilities.
 
@@ -33,7 +34,7 @@ multi-organization from the beginning.
    status and official company response.
 4. A destination-company member sees routed submissions in a private dashboard
    and filters or opens their details.
-5. An administrator changes status and creates or edits one official response;
+5. An administrator changes status and an authorized member publishes one official response;
    the submitter then sees the update.
 6. In a later MVP slice, a Manifest V3 extension captures page context and sends
    the same submission shape through the versioned application API.
@@ -50,7 +51,7 @@ multi-organization from the beginning.
 - Organization inbox and detail views.
 - Status workflow: `submitted`, `under_review`, `planned`, `in_progress`,
   `shipped`, or `declined`, with an audit history.
-- One editable official response per feedback item.
+- One official response per feedback item; editing UI is deferred.
 - Members may see submitter display names; only administrators may see submitter
   email addresses.
 - RLS-protected PostgreSQL data and private Supabase Storage.
@@ -88,11 +89,11 @@ extension is deferred until the complete web feedback loop works.
 - Screenshots are never public; authorized viewers receive expiring URLs.
 - Screenshot uploads accept PNG, JPEG, and WebP files up to 5 MB and remain
   stored until their associated feedback is deleted.
-- Members can list and view their organization's feedback but cannot manage
-  membership, status, or official responses. They can see the submitter's
+- Members can list and view their organization's feedback and publish its single
+  official response, but cannot manage membership or status. They can see the submitter's
   display name but not email address.
-- Administrators can add/remove organization members, change allowed statuses,
-  view submitter email addresses, and create or edit an official response.
+- Administrators can add/remove organization members and change allowed statuses.
+  Submitter email access and response editing remain separate future slices.
 - Administrators can move feedback directly between any two different valid
   statuses; no sequential transition rule applies in the MVP.
 - Status changes record actor, previous status, new status, and timestamp.

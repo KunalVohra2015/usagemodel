@@ -82,29 +82,35 @@ export async function requireAuthenticatedViewer(nextPath: string) {
   return getAuthenticatedViewer();
 }
 
-export const getOrganizationMembership = cache(
-  async (userId: string): Promise<OrganizationMembership | null> => {
+export const getOrganizationMemberships = cache(
+  async (userId: string): Promise<OrganizationMembership[]> => {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("organization_members")
       .select("organization_id, role, organizations!inner(name, slug)")
       .eq("user_id", userId)
-      .limit(1)
-      .maybeSingle();
+      .order("created_at", { ascending: true });
 
-    if (error || !data) return null;
+    if (error || !data) return [];
 
-    const organization = Array.isArray(data.organizations)
-      ? data.organizations[0]
-      : data.organizations;
+    return data.flatMap((row) => {
+      const organization = Array.isArray(row.organizations)
+        ? row.organizations[0]
+        : row.organizations;
 
-    if (!organization) return null;
+      if (!organization) return [];
 
-    return {
-      organizationId: data.organization_id,
-      organizationName: organization.name,
-      organizationSlug: organization.slug,
-      role: data.role,
-    };
+      return [{
+        organizationId: row.organization_id,
+        organizationName: organization.name,
+        organizationSlug: organization.slug,
+        role: row.role,
+      }];
+    });
   },
+);
+
+export const getOrganizationMembership = cache(
+  async (userId: string): Promise<OrganizationMembership | null> =>
+    (await getOrganizationMemberships(userId))[0] ?? null,
 );

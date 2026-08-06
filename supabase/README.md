@@ -1,8 +1,8 @@
 # Supabase Foundation
 
 This directory contains the version-controlled database foundation. Google
-authentication uses Supabase, while feedback screens continue to read
-`src/features/feedback/mock-data.ts` until a later implementation slice.
+authentication, end-user feedback, and the configured product-team dashboard
+use Supabase. Mock records remain isolated to unconfigured environments.
 
 Without both public Supabase environment variables, the application remains in
 mock mode: `/login` renders the approved prototype with Google sign-in disabled,
@@ -110,5 +110,16 @@ For local manual verification, configure Google in Supabase, set Site URL to
 4. Confirm one profile exists with the Auth user UUID and Google display data.
 5. Edit that profile, sign out, sign in again, and confirm the edit remains.
 6. Visit `/dashboard` before membership assignment and confirm the access-denied
-   state. Assign membership manually, refresh, and confirm the mock inbox opens.
+   state. Use `bootstrap/pilot_administrator.sql` in the hosted SQL Editor after
+   replacing placeholders only in an uncommitted copy. Refresh and confirm the
+   real organization inbox opens.
 7. Sign out and confirm `/feedback` and `/dashboard` redirect to `/login`.
+
+## Pilot administrator bootstrap
+
+`bootstrap/pilot_administrator.sql` is a transactional, idempotent operations
+template—not a migration or application endpoint. Its organization and Auth
+user lookups must each resolve exactly once. It promotes only `unclaimed` to
+`claimed`, preserves `verified`, and upserts the explicitly verified user as an
+administrator. It never uses `organizations.created_by`, so contributing a
+directory entry still grants no company access.

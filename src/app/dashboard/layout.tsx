@@ -3,6 +3,7 @@ import { ProfileSetupError } from "@/components/profile-setup-error";
 import { resolveProtectedLayoutContext } from "@/features/auth/protected-layout";
 import {
   getOrganizationMembership,
+  getOrganizationMemberships,
   requireAuthenticatedViewer,
 } from "@/features/auth/server";
 import { getSupabaseEnvironmentStatus } from "@/lib/env";
@@ -26,11 +27,15 @@ export default async function DashboardLayout({
     return <DashboardAccessDenied viewer={context.viewer} />;
   }
   if (!context.membership) return null;
+  const memberships = context.mode === "mock"
+    ? [context.membership]
+    : await getOrganizationMemberships(context.viewer.id);
 
   return (
     <DashboardShell
       viewer={context.viewer}
       membership={context.membership}
+      organizationCount={memberships.length}
       demoMode={context.mode === "mock"}
     >
       {children}

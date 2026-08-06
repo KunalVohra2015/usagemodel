@@ -9,6 +9,10 @@ migration, SQL audits, and Node tests. With Supabase configured, `/feedback/new`
 persists authenticated text feedback and `/feedback` plus `/feedback/[id]` read
 only the verified submitter's records. Without Supabase, those routes retain a
 clearly labeled and isolated demo experience.
+The configured product-team dashboard uses verified organization memberships,
+RLS-scoped inbox/detail queries, admin-only status changes, and member response
+publication. A manual SQL Editor bootstrap explicitly verifies the first pilot
+administrator; directory creation never implies membership.
 
 ## Recommended Shape
 
