@@ -6,6 +6,7 @@ import {
   selectAuthorizedOrganization,
 } from "../src/features/dashboard/authorization.ts";
 import { filterDashboardFeedback } from "../src/features/dashboard/filters.ts";
+import { selectOfficialResponseBody } from "../src/features/dashboard/detail-presentation.ts";
 import {
   validateOfficialResponse,
   validateStatusUpdate,
@@ -61,6 +62,26 @@ test("members may publish one validated official response", () => {
   assert.match(validateOfficialResponse({ body: "x".repeat(10_001), membership: memberships[1], responseExists: false }).message, /10,000/i);
   assert.match(validateOfficialResponse({ body: "Another", membership: memberships[1], responseExists: true }).message, /already/i);
   assert.match(validateOfficialResponse({ body: "Response", membership: null, responseExists: false }).message, /membership/i);
+});
+
+test("configured feedback without an official response remains publishable", () => {
+  const configuredItem = { officialResponse: null };
+
+  assert.doesNotThrow(() => selectOfficialResponseBody(configuredItem, null));
+  assert.equal(selectOfficialResponseBody(configuredItem, null), undefined);
+  assert.equal(
+    selectOfficialResponseBody(
+      { officialResponse: { body: "Configured response" } },
+      null,
+    ),
+    "Configured response",
+  );
+  assert.equal(
+    selectOfficialResponseBody(null, {
+      officialResponse: { body: "Demo response" },
+    }),
+    "Demo response",
+  );
 });
 
 test("dashboard queries enforce membership and organization scope without email", async () => {
